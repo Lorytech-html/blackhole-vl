@@ -1,0 +1,17 @@
+# Template file for 'syswatch'
+pkgname=syswatch
+version=0.7.5
+revision=1
+build_style=cargo
+hostmakedepends="pkg-config nasm"
+short_desc="Single-host system diagnostics TUI"
+maintainer="nerdyslacker <karyan40024@gmail.com>"
+license="MIT"
+homepage="https://www.netwatchlabs.com"
+distfiles="https://github.com/matthart1983/syswatch/archive/refs/tags/v${version}.tar.gz"
+checksum=b3530bfc1e1c87844553873e68fb39370240c6a4b43fdf0361d475ab6b0d298e
+
+post_install() {
+	vdoc README.md
+	vlicense LICENSE
+}
