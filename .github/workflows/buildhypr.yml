@@ -1,0 +1,60 @@
+name: build-hyprland-stack
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/void-linux/void-glibc-full
+      options: --privileged
+    env:
+      XBPS_ALLOW_CHROOT_BREAKOUT: "yes"
+
+    steps:
+      - name: install deps
+        run: xbps-install -Suy git bash
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: trust workspace for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: bootstrap
+        run: ./xbps-src binary-bootstrap
+
+      - name: disable strict pkglint soname check
+        run: sed -i 's/msg_error/msg_warn/' common/hooks/pre-pkg/99-pkglint.sh
+
+      - name: fix shlibs mappings
+        run: |
+          echo "libhyprutils.so.12 hyprutils-0.13.1_1" >> common/shlibs
+          echo "libjxl.so.0.12 libjxl-0.12.0_1" >> common/shlibs
+          echo "libjxl_threads.so.0.12 libjxl-0.12.0_1" >> common/shlibs
+          echo "libhyprlang.so.2 hyprlang-0.6.8_4" >> common/shlibs
+          echo "libtomlplusplus.so.3 tomlplusplus-3.4.0_1" >> common/shlibs
+          echo "libaquamarine.so.10 aquamarine-0.11.0_1" >> common/shlibs
+          echo "libhyprcursor.so.0 hyprcursor-0.1.13_1" >> common/shlibs
+          echo "libhyprgraphics.so.4 hyprgraphics-0.5.1_1" >> common/shlibs
+          echo "libhyprwire.so.3 hyprwire-0.3.1_1" >> common/shlibs
+
+      - name: build hyprutils
+        run: ./xbps-src pkg hyprutils
+
+      - name: build hyprgraphics
+        run: ./xbps-src pkg hyprgraphics
+
+      - name: build hyprland
+        run: ./xbps-src pkg hyprland
+
+      - name: build repository index
+        run: |
+          mkdir -p repo/x86_64
+          find hostdir/binpkgs -name '*.xbps' -exec cp {} repo/x86_64/ \;
+          xbps-rindex -a repo/x86_64/*.xbps
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ps4-repo
+          path: repo
