@@ -27,7 +27,13 @@ jobs:
       - name: Update xbps and install base tools
         run: |
           xbps-install -Suy xbps
-          xbps-install -Suy bash git base-devel
+          xbps-install -Suy bash git base-devel sudo
+
+      - name: Create build user
+        run: |
+          useradd -m -s /bin/bash builder
+          echo "builder ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/builder
+          chmod 440 /etc/sudoers.d/builder
 
       - name: Clone void-packages
         run: git clone --depth 1 https://github.com/void-linux/void-packages.git
@@ -53,13 +59,16 @@ jobs:
             cat ../blackhole-vl/shlibs_append >> common/shlibs
           fi
 
+      - name: Fix ownership for build user
+        run: chown -R builder:builder "$GITHUB_WORKSPACE"
+
       - name: Bootstrap xbps-src
         working-directory: void-packages
-        run: ./xbps-src binary-bootstrap
+        run: sudo -u builder -H bash -c "cd '$PWD' && ./xbps-src binary-bootstrap"
 
       - name: Build packages
         working-directory: void-packages
-        run: ./xbps-src pkg ${{ github.event.inputs.packages }}
+        run: sudo -u builder -H bash -c "cd '$PWD' && ./xbps-src pkg ${{ github.event.inputs.packages }}"
 
       - name: Generate repodata
         run: |
