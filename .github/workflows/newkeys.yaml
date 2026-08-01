@@ -1,0 +1,42 @@
+name: Sign repo
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository-x86_64 branch
+        uses: actions/checkout@v4
+        with:
+          ref: repository-x86_64
+          path: repo
+
+      - name: Download static xbps tools
+        run: |
+          curl -L -o xbps-static.tar.xz \
+            https://repo-default.voidlinux.org/current/static/xbps-static-latest.x86_64-musl.tar.xz
+          mkdir xbps-static
+          tar -xf xbps-static.tar.xz -C xbps-static
+
+      - name: Write signing key from secret
+        run: echo "${{ secrets.REPO_SIGN_KEY }}" > privkey.pem
+
+      - name: Sign repodata and packages
+        run: |
+          export PATH="$PWD/xbps-static/usr/bin:$PATH"
+          xbps-rindex --sign --signedby "Lollo <you@example.com>" --privkey privkey.pem repo/x86_64
+          xbps-rindex --sign-pkg --privkey privkey.pem repo/x86_64/*.xbps
+          rm -f privkey.pem
+
+      - name: Commit and push signed repo
+        run: |
+          cd repo
+          git -c user.name="github-actions[bot]" -c user.email="actions@github.com" add x86_64
+          git -c user.name="github-actions[bot]" -c user.email="actions@github.com" \
+              commit -m "sign repo $(date -u +%F)" || echo "niente da committare"
+          git push origin repository-x86_64
