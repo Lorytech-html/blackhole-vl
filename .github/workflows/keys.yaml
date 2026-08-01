@@ -1,0 +1,16 @@
+name: Generate signing key
+
+on:
+  workflow_dispatch:
+
+jobs:
+  genkey:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate RSA key
+        run: |
+          openssl genrsa -out privkey.pem 4096
+          echo "=== COPIA TUTTO QUELLO CHE STA TRA I MARKER ==="
+          echo "-----BEGIN KEY BLOCK-----"
+          cat privkey.pem
+          echo "-----END KEY BLOCK-----"
