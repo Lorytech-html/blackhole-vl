@@ -6,7 +6,7 @@ on:
       packages:
         description: 'Pacchetti da buildare (separati da spazio)'
         required: true
-        default: 'hyprland'
+        default: 'hyprutils hyprlang hyprgraphics hyprwire aquamarine hyprland'
 
 permissions:
   contents: write
@@ -71,9 +71,21 @@ jobs:
         working-directory: void-packages
         run: sudo -u builder -H bash -c "cd '$PWD' && ./xbps-src binary-bootstrap"
 
+      - name: Refresh chroot repo index
+        working-directory: void-packages
+        run: sudo -u builder -H bash -c "cd '$PWD' && ./xbps-src bootstrap-update"
+
       - name: Build packages
         working-directory: void-packages
-        run: sudo -u builder -H bash -c "cd '$PWD' && ./xbps-src pkg ${{ github.event.inputs.packages }}"
+        run: |
+          sudo -u builder -H bash -c '
+            set -e
+            cd "'"$PWD"'"
+            for p in ${{ github.event.inputs.packages }}; do
+              echo "=== Building $p ==="
+              ./xbps-src pkg "$p"
+            done
+          '
 
       - name: Generate repodata
         run: |
