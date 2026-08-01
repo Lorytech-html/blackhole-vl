@@ -19,7 +19,7 @@ jobs:
       - name: Download static xbps tools
         run: |
           curl -L -o xbps-static.tar.xz \
-            https://repo-default.voidlinux.org/current/static/xbps-static-latest.x86_64-musl.tar.xz
+            https://repo-default.voidlinux.org/static/xbps-static-latest.x86_64-musl.tar.xz
           mkdir xbps-static
           tar -xf xbps-static.tar.xz -C xbps-static
 
